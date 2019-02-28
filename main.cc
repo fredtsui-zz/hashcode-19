@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
   if(!fin.is_open()){
     cerr << "no file named " << input_file << " found" << endl;
   }
-  int n;
+  int n, max_num_tags;
   vector<image> images;
   cout << "reading from " << input_file << endl;
   fin >> n;
@@ -107,7 +107,6 @@ int main(int argc, char* argv[]) {
     slide ptr(images[horizontal_imgs[i]]);
     vector<slide> current;
     current.push_back(ptr);
-next_step:    
     while(counter > 0) {
       cout << counter << " left";
       int score_one_step = 0;
@@ -116,6 +115,8 @@ next_step:
       // find the best match
       
       for(int j = 0; j < num_horizontal; j++){
+      //for(set<int>::iterator it = remaining.begin(); it != remaining.end(); ++it){
+        //int j = *it;
         if(remaining.find(horizontal_imgs[j]) == remaining.end()) continue;
         //cout << "looking at horizontal image " << horizontal_imgs[j] << endl;
         slide next(images[horizontal_imgs[j]]);
@@ -123,6 +124,9 @@ next_step:
         if(tmp > score_one_step) {
           score_one_step = tmp;
           next_slide = next;
+          if(tmp * 2 >= min(ptr.tags.size(), next.tags.size())){
+            goto conclusion;
+          }
         }
       }
       for(int j = 0; j < num_vertical - 1; j++) {
@@ -135,9 +139,13 @@ next_step:
           if(tmp > score_one_step) {
             score_one_step = tmp;
             next_slide = next;
+            if(tmp * 2 >= min(ptr.tags.size(), next.tags.size())){
+              goto conclusion;
+            }
           }
         }
       }
+conclusion:
       current.push_back(next_slide);
       counter --;
       remaining.erase(next_slide.img1);
@@ -147,11 +155,22 @@ next_step:
       }
       
       score += score_one_step;
-      cout << "\r";
+      cout << endl;
     }
     if(score > max_score) {
       max_score = score;
       optimal = current;
+      ofstream fout;
+      fout.open("out.txt", ios_base::out);
+      fout << max_score << endl;
+      for(int i = 0; i < optimal.size(); i++) {
+        fout << optimal[i].img1;
+        if(optimal[i].layout == 'V') {
+          fout << " " << optimal[i].img2;
+        }
+        fout << endl;
+      }
+      fout.close();
     }
   }
   cout << max_score << endl;
